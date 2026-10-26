@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Course Registration System | Port 8072</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header class="navbar">
+        <div class="nav-container">
+            <div class="brand">
+                <span class="brand-icon">🎓</span>
+                <span class="brand-title">Course Registration System</span>
+                <span class="badge host-port-badge">Host Port: 8072</span>
+            </div>
+            <div class="system-status" id="system-status">
+                <span class="status-dot checking" id="status-dot"></span>
+                <span id="status-text">Checking System Health...</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Global Alert Container (fallback) -->
+    <div class="alert-container" id="alert-container"></div>
+
+    <main class="container">
+        <!-- Dashboard Statistics Cards -->
+        <section class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">Total Courses</div>
+                <div class="stat-value" id="stat-courses">-</div>
+                <div class="stat-subtext">Active catalog offerings</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Total Students</div>
+                <div class="stat-value" id="stat-students">-</div>
+                <div class="stat-subtext">Registered student accounts</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Total Registrations</div>
+                <div class="stat-value" id="stat-registrations">-</div>
+                <div class="stat-subtext">Current course enrollments</div>
+            </div>
+            <div class="stat-card" id="db-status-card">
+                <div class="stat-header-row">
+                    <span class="stat-label">Database Status</span>
+                    <button class="btn-refresh-status" id="btn-check-db" title="Check Database Status Now">🔄 Check</button>
+                </div>
+                <div class="stat-value highlight" id="stat-db">
+                    <span class="badge-status checking">Checking...</span>
+                </div>
+                <div class="stat-subtext" id="stat-db-sub">Connecting to PostgreSQL 16...</div>
+            </div>
+        </section>
+
+        <!-- Course Management Tier -->
+        <section class="card-section" id="course-section">
+            <div class="card-header">
+                <h2>📚 Course Management</h2>
+                <p>Add new courses with capacity or remove existing courses.</p>
+            </div>
+            <!-- Section-Specific Alert Box for Courses -->
+            <div class="section-alert" id="course-alert-container"></div>
+            <div class="grid-2-col">
+                <div class="form-box">
+                    <h3>Add New Course</h3>
+                    <form id="form-add-course">
+                        <div class="form-group">
+                            <label for="course-code">Course Code</label>
+                            <input type="text" id="course-code" placeholder="e.g. CS101, NET202" required maxlength="30">
+                        </div>
+                        <div class="form-group">
+                            <label for="course-title">Course Title</label>
+                            <input type="text" id="course-title" placeholder="e.g. Cloud Computing Systems" required maxlength="160">
+                        </div>
+                        <div class="form-group">
+                            <label for="course-seats">Seat Capacity</label>
+                            <input type="number" id="course-seats" min="1" placeholder="e.g. 3" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary" id="btn-add-course">Add Course</button>
+                    </form>
+                </div>
+                <div class="table-box">
+                    <h3>Available Courses</h3>
+                    <div class="table-responsive">
+                        <table class="data-table" id="courses-table">
+                            <thead>
+                                <tr>
+                                    <th>Code</th>
+                                    <th>Title</th>
+                                    <th>Capacity</th>
+                                    <th>Enrolled</th>
+                                    <th>Available</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="courses-tbody">
+                                <tr><td colspan="6" class="text-center">Loading courses...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Student Management Tier -->
+        <section class="card-section" id="student-section">
+            <div class="card-header">
+                <h2>👤 Student Management</h2>
+                <p>Register new student profiles or delete existing student records from the database.</p>
+            </div>
+            <!-- Section-Specific Alert Box for Students -->
+            <div class="section-alert" id="student-alert-container"></div>
+            <div class="grid-2-col">
+                <div class="form-box">
+                    <h3>Register New Student</h3>
+                    <form id="form-add-student">
+                        <div class="form-group">
+                            <label for="student-name">Student Full Name</label>
+                            <input type="text" id="student-name" placeholder="e.g. Alice Johnson" required maxlength="120">
+                        </div>
+                        <div class="form-group">
+                            <label for="student-email">Email Address</label>
+                            <input type="email" id="student-email" placeholder="e.g. alice@example.com" required maxlength="160">
+                        </div>
+                        <button type="submit" class="btn btn-primary" id="btn-add-student">Add Student</button>
+                    </form>
+                </div>
+                <div class="table-box">
+                    <h3>Registered Students</h3>
+                    <div class="table-responsive">
+                        <table class="data-table" id="students-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Created At</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="students-tbody">
+                                <tr><td colspan="5" class="text-center">Loading students...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Enrollment & Course Registration Tier -->
+        <section class="card-section" id="enrollment-section">
+            <div class="card-header">
+                <h2>📝 Student Course Enrollment</h2>
+                <p>Enroll students into courses with atomic capacity and uniqueness validation.</p>
+            </div>
+            <!-- Section-Specific Alert Box for Enrollment -->
+            <div class="section-alert" id="enroll-alert-container"></div>
+            <div class="grid-2-col">
+                <div class="form-box">
+                    <h3>Enroll Student in Course</h3>
+                    <form id="form-enroll">
+                        <div class="form-group">
+                            <label for="enroll-student">Select Student</label>
+                            <select id="enroll-student" required>
+                                <option value="">-- Choose Student --</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="enroll-course">Select Course</label>
+                            <select id="enroll-course" required>
+                                <option value="">-- Choose Course --</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-success" id="btn-enroll">Register Student</button>
+                    </form>
+                </div>
+                <div class="table-box">
+                    <h3>Active Registrations</h3>
+                    <div class="table-responsive">
+                        <table class="data-table" id="registrations-table">
+                            <thead>
+                                <tr>
+                                    <th>Reg #</th>
+                                    <th>Student</th>
+                                    <th>Course</th>
+                                    <th>Registered At</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="registrations-tbody">
+                                <tr><td colspan="5" class="text-center">Loading registrations...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Course Roster Modal -->
+        <div class="modal-overlay hidden" id="roster-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 id="modal-roster-title">Course Roster</h3>
+                    <button class="modal-close" id="modal-close">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <table class="data-table" id="roster-table">
+                        <thead>
+                            <tr>
+                                <th>Student ID</th>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Registered At</th>
+                            </tr>
+                        </thead>
+                        <tbody id="roster-tbody">
+                            <tr><td colspan="4" class="text-center">No students registered yet.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" id="modal-close-btn">Close</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <p>Lab 4: Deploying a Multi-Tier Application with Docker Compose &bull; Individual Assignment (Port 8072)</p>
+        <p>Stack: Nginx Reverse Proxy + Python FastAPI Backend + PostgreSQL 16 Relational Database</p>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>
